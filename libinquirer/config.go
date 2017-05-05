@@ -19,7 +19,7 @@ type PollConfiguration struct {
 	Host      string            `json:"host"`
 	Version   string            `json:"version"`
 	OIDs      map[string]string `json:"oids"`
-	Retries   uint              `json:"retries"`
+	Retries   int               `json:"retries"`
 	auth
 }
 

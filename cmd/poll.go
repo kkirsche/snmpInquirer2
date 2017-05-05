@@ -15,12 +15,11 @@
 package cmd
 
 import (
-	"fmt"
 	"net"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/k-sone/snmpgo"
+	"github.com/soniah/gosnmp"
 	"github.com/spf13/cobra"
 	"ni.vzbi.com/stash/scm/ncsddos/inquirer2/libinquirer"
 )
@@ -84,63 +83,62 @@ must be used to loop this every minute.`,
 				stroids = append(stroids, oid)
 			}
 
-			oids, err := snmpgo.NewOids(stroids)
-			if err != nil {
-				log.WithError(err).Errorln("Failed to create OIDs object")
-				continue
-			}
-			logrus.Debugln("OID object successfully created")
-
 			logrus.WithFields(logrus.Fields{
 				"host":     cfg.Host,
 				"dns_name": strings.Join(dnsName, "|"),
 			}).Debugln("Creating client connection to host")
-			err = client.Open()
+			err = client.Connect()
 			if err != nil {
 				log.WithError(err).Errorln("Failed to open SNMP connection")
 				continue
 			}
+			defer client.Conn.Close()
 			logrus.Debugln("Client connection created successfully")
 
 			logrus.WithFields(logrus.Fields{
 				"nonrepeaters":   0,
 				"maxrepetitions": 10,
 			}).Debugln("Beginning bulk walk")
-			pdu, err := client.GetBulkWalk(oids, 0, 10)
-			if err != nil {
-				log.WithError(err).Errorln("Failed to execute bulk walk request")
-				client.Close()
-				continue
-			}
-			logrus.Debugln("PDU's retrieved, checking for PDU error(s)")
-			if pdu.ErrorStatus() != snmpgo.NoError {
-				log.WithFields(logrus.Fields{
-					"error_index": pdu.ErrorIndex(),
-				}).Errorln(pdu.ErrorStatus())
-				client.Close()
-				continue
-			}
-			logrus.Debugln("No PDU errors found")
+			for _, oid := range stroids {
+				pdus, err := client.BulkWalkAll(oid)
+				if err != nil {
+					log.WithError(err).Errorln("Failed to execute bulk walk request")
+					continue
+				}
+				logrus.Debugln("PDU's retrieved, checking for PDU error(s)")
+				for _, pdu := range pdus {
+					logrus.Debugln("Bulk walk completed successfully")
+					logrus.Debugln("Outputting result values")
+					splitOID := strings.Split(pdu.Name, ".")
+					intIndex := strings.Join(splitOID[len(splitOID)-1:len(splitOID)], ".")
+					switch pdu.Type {
+					case gosnmp.OctetString:
+						log.WithFields(logrus.Fields{
+							"full_oid":        pdu.Name,
+							"host_queried":    cfg.Host,
+							"dns_name":        strings.Join(dnsName, "|^|"),
+							"oid":             oid,
+							"oid_name":        cfg.OIDs[oid],
+							"interface_index": intIndex,
+							"type":            pdu.Type,
+							"value":           string(pdu.Value.([]byte)),
+						}).Infoln("OID successfully retrieved")
+					default:
+						log.WithFields(logrus.Fields{
+							"full_oid":        pdu.Name,
+							"host_queried":    cfg.Host,
+							"dns_name":        strings.Join(dnsName, "|^|"),
+							"oid":             oid,
+							"oid_name":        cfg.OIDs[oid],
+							"interface_index": intIndex,
+							"type":            pdu.Type,
+							"value":           gosnmp.ToBigInt(pdu.Value),
+						}).Infoln("OID successfully retrieved")
+					}
 
-			logrus.Debugln("Bulk walk completed successfully")
-			logrus.Debugln("Outputting result values")
-			for _, val := range pdu.VarBinds() {
-				splitOID := strings.Split(val.Oid.String(), ".")
-				oid := strings.Join(splitOID[:len(splitOID)-1], ".")
-				intIndex := strings.Join(splitOID[len(splitOID)-1:len(splitOID)], ".")
-				log.WithFields(logrus.Fields{
-					"full_oid":        val.Oid,
-					"host_queried":    cfg.Host,
-					"dns_name":        strings.Join(dnsName, "|^|"),
-					"oid":             oid,
-					"oid_name":        cfg.OIDs[fmt.Sprintf(".%s", oid)],
-					"interface_index": intIndex,
-					"type":            val.Variable.Type(),
-					"value":           val.Variable,
-				}).Infoln("OID successfully retrieved")
+				}
 			}
 			logrus.Debugln("Host output complete")
-			client.Close()
 		}
 	},
 }

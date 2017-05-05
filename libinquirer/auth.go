@@ -2,8 +2,8 @@ package libinquirer
 
 import (
 	"github.com/Sirupsen/logrus"
-	"github.com/k-sone/snmpgo"
 	"github.com/pkg/errors"
+	"github.com/soniah/gosnmp"
 )
 
 const (
@@ -24,11 +24,11 @@ const (
 // connections
 type SNMPAuth struct {
 	Username      string
-	SecurityLevel snmpgo.SecurityLevel
+	SecurityLevel gosnmp.SnmpV3MsgFlags
 	AuthPassword  string
-	AuthProtocol  snmpgo.AuthProtocol
+	AuthProtocol  gosnmp.SnmpV3AuthProtocol
 	PrivPassword  string
-	PrivProtocol  snmpgo.PrivProtocol
+	PrivProtocol  gosnmp.SnmpV3PrivProtocol
 }
 
 // auth is used when parsing the user's configuration file
@@ -41,48 +41,48 @@ type auth struct {
 	PrivProtocol  string `json:"priv_protocol"`
 }
 
-func retrieveSecurityLevel(s string) (snmpgo.SecurityLevel, error) {
+func retrieveSecurityLevel(s string) (gosnmp.SnmpV3MsgFlags, error) {
 	switch s {
 	case noauthnopriv:
 		logrus.WithField(securityLevel, noauthnopriv).Debugln("Security level set")
-		return snmpgo.NoAuthNoPriv, nil
+		return gosnmp.NoAuthNoPriv, nil
 	case authnopriv:
 		logrus.WithField(securityLevel, authnopriv).Debugln("Security level set")
-		return snmpgo.AuthNoPriv, nil
+		return gosnmp.AuthNoPriv, nil
 	case authpriv:
 		logrus.WithField(securityLevel, authpriv).Debugln("Security level set")
-		return snmpgo.AuthPriv, nil
+		return gosnmp.AuthPriv, nil
 	default:
 		logrus.WithField(securityLevel, s).Debugln("Invalid security level detected")
-		return snmpgo.AuthPriv, errors.Errorf("Invalid security level. Please select NoAuthNoPriv, AuthNoPriv, or AuthPriv")
+		return gosnmp.AuthPriv, errors.Errorf("Invalid security level. Please select NoAuthNoPriv, AuthNoPriv, or AuthPriv")
 	}
 }
 
-func retrieveAuthProto(a string) (snmpgo.AuthProtocol, error) {
+func retrieveAuthProto(a string) (gosnmp.SnmpV3AuthProtocol, error) {
 	switch a {
 	case md5:
 		logrus.WithField(authenticationProtocol, md5).Debugln("Authentication protocol set")
-		return snmpgo.Md5, nil
+		return gosnmp.MD5, nil
 	case sha:
 		logrus.WithField(authenticationProtocol, sha).Debugln("Authentication protocol set")
-		return snmpgo.Sha, nil
+		return gosnmp.SHA, nil
 	default:
 		logrus.WithField(authenticationProtocol, a).Debugln("Invalid authentication protocol detected")
-		return snmpgo.Sha, errors.Errorf("Invalid auth protocol. Please select MD5 or SHA")
+		return gosnmp.SHA, errors.Errorf("Invalid auth protocol. Please select MD5 or SHA")
 	}
 }
 
-func retrievePrivProto(p string) (snmpgo.PrivProtocol, error) {
+func retrievePrivProto(p string) (gosnmp.SnmpV3PrivProtocol, error) {
 	switch p {
 	case des:
 		logrus.WithField(privateProtocol, des).Debugln("Private communication protocol set")
-		return snmpgo.Des, nil
+		return gosnmp.DES, nil
 	case aes:
 		logrus.WithField(privateProtocol, aes).Debugln("Private communication protocol set")
-		return snmpgo.Aes, nil
+		return gosnmp.AES, nil
 	default:
 		logrus.WithField(privateProtocol, p).Debugln("Invalid authentication protocol detected")
-		return snmpgo.Aes, errors.Errorf("Invalid private communication protocol. Please select DES or AES")
+		return gosnmp.AES, errors.Errorf("Invalid private communication protocol. Please select DES or AES")
 	}
 }
 
