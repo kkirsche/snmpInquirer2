@@ -3,7 +3,7 @@ package libinquirer
 import (
 	"testing"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // Valid Client Configurations

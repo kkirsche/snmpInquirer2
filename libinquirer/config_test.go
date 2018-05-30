@@ -6,7 +6,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 func TestParseValidConfigFile(t *testing.T) {

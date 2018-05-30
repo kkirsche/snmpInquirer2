@@ -15,10 +15,11 @@
 package cmd
 
 import (
+	"fmt"
 	"net"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/soniah/gosnmp"
 	"github.com/spf13/cobra"
 	"ni.vzbi.com/stash/scm/ncsddos/inquirer2/libinquirer"
@@ -32,10 +33,35 @@ var pollCmd = &cobra.Command{
 another automated service. This does not automate the timing, a tool like cron
 must be used to loop this every minute.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		var constLookup = map[gosnmp.Asn1BER]string{
+			gosnmp.UnknownType:       "UnknownType",
+			gosnmp.Boolean:           "Boolean",
+			gosnmp.Integer:           "Integer",
+			gosnmp.BitString:         "BitString",
+			gosnmp.OctetString:       "OctetString",
+			gosnmp.Null:              "Null",
+			gosnmp.ObjectIdentifier:  "ObjectIdentifier",
+			gosnmp.ObjectDescription: "ObjectDescription",
+			gosnmp.IPAddress:         "IPAddress",
+			gosnmp.Counter32:         "Counter32",
+			gosnmp.Gauge32:           "Gauge32",
+			gosnmp.TimeTicks:         "TimeTicks",
+			gosnmp.Opaque:            "Opaque",
+			gosnmp.NsapAddress:       "NsapAddress",
+			gosnmp.Counter64:         "Counter64",
+			gosnmp.Uinteger32:        "Uinteger32",
+			gosnmp.OpaqueFloat:       "OpaqueFloat",
+			gosnmp.OpaqueDouble:      "OpaqueDouble",
+			gosnmp.NoSuchObject:      "NoSuchObject",
+			gosnmp.NoSuchInstance:    "NoSuchInstance",
+			gosnmp.EndOfMibView:      "EndOfMibView",
+		}
+
 		conf, err := libinquirer.ParseConfigFile(cfgFile)
 		if err != nil {
 			log.WithError(err).Errorln("Failed to parse configuration file")
 		}
+
 		log.WithField("requested_poll_qty", len(conf.Poll)).Infof("%s poll configurations provided", cfgFile)
 		for i, cfg := range conf.Poll {
 			logrus.WithField("iteration", i).Debugln("Beginning poll process")
@@ -66,6 +92,7 @@ must be used to loop this every minute.`,
 				"retries":          cfg.Retries,
 				"version":          cfg.Version,
 			}).Debugln("Creating SNMP client")
+
 			client, err := libinquirer.CreateClient(cfg.Host, cfg.Community, cfg.Retries, sv, auth)
 			if err != nil {
 				log.WithError(err).Errorln("Failed to create SNMP client")
@@ -85,7 +112,7 @@ must be used to loop this every minute.`,
 
 			logrus.WithFields(logrus.Fields{
 				"host":     cfg.Host,
-				"dns_name": strings.Join(dnsName, "|"),
+				"dns_name": strings.Join(dnsName, "|^|"),
 			}).Debugln("Creating client connection to host")
 			err = client.Connect()
 			if err != nil {
@@ -114,24 +141,26 @@ must be used to loop this every minute.`,
 					switch pdu.Type {
 					case gosnmp.OctetString:
 						log.WithFields(logrus.Fields{
-							"full_oid":        pdu.Name,
-							"host_queried":    cfg.Host,
-							"dns_name":        strings.Join(dnsName, "|^|"),
+							"full_oid":              pdu.Name,
+							"host_queried":          cfg.Host,
+							"queried_host_dns_name": strings.Join(dnsName, "|^|"),
 							"oid":             oid,
 							"oid_name":        cfg.OIDs[oid],
 							"interface_index": intIndex,
-							"type":            pdu.Type,
+							"pdu_type":        fmt.Sprintf("0x%x", pdu.Type),
+							"pdu_type_name":   constLookup[pdu.Type],
 							"value":           string(pdu.Value.([]byte)),
 						}).Infoln("OID successfully retrieved")
 					default:
 						log.WithFields(logrus.Fields{
-							"full_oid":        pdu.Name,
-							"host_queried":    cfg.Host,
-							"dns_name":        strings.Join(dnsName, "|^|"),
+							"full_oid":              pdu.Name,
+							"host_queried":          cfg.Host,
+							"queried_host_dns_name": strings.Join(dnsName, "|^|"),
 							"oid":             oid,
 							"oid_name":        cfg.OIDs[oid],
 							"interface_index": intIndex,
-							"type":            pdu.Type,
+							"pdu_type":        fmt.Sprintf("0x%x", pdu.Type),
+							"pdu_type_name":   constLookup[pdu.Type],
 							"value":           gosnmp.ToBigInt(pdu.Value),
 						}).Infoln("OID successfully retrieved")
 					}

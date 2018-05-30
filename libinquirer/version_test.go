@@ -3,8 +3,8 @@ package libinquirer
 import (
 	"testing"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/juju/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // Valid Configurations
