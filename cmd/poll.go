@@ -19,10 +19,10 @@ import (
 	"net"
 	"strings"
 
+	"github.com/kkirsche/snmpInquirer2/libinquirer"
 	"github.com/sirupsen/logrus"
 	"github.com/soniah/gosnmp"
 	"github.com/spf13/cobra"
-	"ni.vzbi.com/stash/scm/ncsddos/inquirer2/libinquirer"
 )
 
 // pollCmd represents the minute command

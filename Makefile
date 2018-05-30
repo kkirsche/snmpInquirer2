@@ -3,7 +3,7 @@ GOARCH=amd64
 HASH=$(shell git rev-parse HEAD)
 BUILDDATE=$(shell date -u '+%Y-%m-%dT%k:%M:%SZ')
 VERSION=3.0.0
-LDFLAGS=-ldflags "-s -X ni.vzbi.com/stash/scm/ncsddos/$(BINARY)/cmd.BuildHash=$(HASH) -X ni.vzbi.com/stash/scm/ncsddos/$(BINARY)/cmd.BuildTime=$(BUILDDATE) -X ni.vzbi.com/stash/scm/ncsddos/$(BINARY)/cmd.BuildVersion=$(VERSION)"
+LDFLAGS=-ldflags "-s -X github.com/kkirsche/snmpInquirer2/$(BINARY)/cmd.BuildHash=$(HASH) -X github.com/kkirsche/snmpInquirer2/$(BINARY)/cmd.BuildTime=$(BUILDDATE) -X github.com/kkirsche/snmpInquirer2/$(BINARY)/cmd.BuildVersion=$(VERSION)"
 
 lint:
 	golint ./...
