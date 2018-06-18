@@ -16,7 +16,6 @@ package cmd
 
 import (
 	"fmt"
-	"net"
 	"strings"
 
 	"github.com/kkirsche/snmpInquirer2/libinquirer"
@@ -79,15 +78,8 @@ must be used to loop this every minute.`,
 
 			logrus.WithField("version", cfg.Version).Debugln("SNMP version accepted")
 
-			logrus.WithField("host", cfg.Host).Debugln("Looking up host's DNS name")
-			dnsName, err := net.LookupAddr(cfg.Host)
-			if err != nil {
-				logrus.WithError(err).Errorln("Failed to resolve IP Address to DNS name")
-			}
-
 			logrus.WithFields(logrus.Fields{
 				"host":             cfg.Host,
-				"dns_name":         strings.Join(dnsName, "|"),
 				"community_string": cfg.Community,
 				"retries":          cfg.Retries,
 				"version":          cfg.Version,
@@ -111,8 +103,7 @@ must be used to loop this every minute.`,
 			}
 
 			logrus.WithFields(logrus.Fields{
-				"host":     cfg.Host,
-				"dns_name": strings.Join(dnsName, "|^|"),
+				"host": cfg.Host,
 			}).Debugln("Creating client connection to host")
 			err = client.Connect()
 			if err != nil {
@@ -141,9 +132,8 @@ must be used to loop this every minute.`,
 					switch pdu.Type {
 					case gosnmp.OctetString:
 						log.WithFields(logrus.Fields{
-							"full_oid":              pdu.Name,
-							"host_queried":          cfg.Host,
-							"queried_host_dns_name": strings.Join(dnsName, "|^|"),
+							"full_oid":        pdu.Name,
+							"host_queried":    cfg.Host,
 							"oid":             oid,
 							"oid_name":        cfg.OIDs[oid],
 							"interface_index": intIndex,
@@ -153,9 +143,8 @@ must be used to loop this every minute.`,
 						}).Infoln("OID successfully retrieved")
 					default:
 						log.WithFields(logrus.Fields{
-							"full_oid":              pdu.Name,
-							"host_queried":          cfg.Host,
-							"queried_host_dns_name": strings.Join(dnsName, "|^|"),
+							"full_oid":        pdu.Name,
+							"host_queried":    cfg.Host,
 							"oid":             oid,
 							"oid_name":        cfg.OIDs[oid],
 							"interface_index": intIndex,
