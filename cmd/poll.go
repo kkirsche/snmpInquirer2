@@ -58,10 +58,10 @@ must be used to loop this every minute.`,
 
 		conf, err := libinquirer.ParseConfigFile(cfgFile)
 		if err != nil {
-			log.WithError(err).Errorln("Failed to parse configuration file")
+			logrus.WithError(err).Errorln("Failed to parse configuration file")
 		}
 
-		log.WithField("requested_poll_qty", len(conf.Poll)).Infof("%s poll configurations provided", cfgFile)
+		logrus.WithField("requested_poll_qty", len(conf.Poll)).Infof("%s poll configurations provided", cfgFile)
 		for i, cfg := range conf.Poll {
 			logrus.WithField("iteration", i).Debugln("Beginning poll process")
 			logrus.WithField("version", cfg.Version).Debugln("SNMP version requested --- Validating")
@@ -71,7 +71,7 @@ must be used to loop this every minute.`,
 			if sv.Get() == "v3" {
 				auth, err = libinquirer.NewAuth(cfg.Username, cfg.SecurityLevel, cfg.AuthPassword, cfg.AuthProtocol, cfg.PrivPassword, cfg.PrivProtocol)
 				if err != nil {
-					log.WithError(err).Errorln("Failed to create SNMP V3 authentication object")
+					logrus.WithError(err).Errorln("Failed to create SNMP V3 authentication object")
 					return
 				}
 			}
@@ -87,7 +87,7 @@ must be used to loop this every minute.`,
 
 			client, err := libinquirer.CreateClient(cfg.Host, cfg.Community, cfg.Retries, sv, auth)
 			if err != nil {
-				log.WithError(err).Errorln("Failed to create SNMP client")
+				logrus.WithError(err).Errorln("Failed to create SNMP client")
 				return
 			}
 			logrus.Debugln("SNMP client created")
@@ -107,7 +107,7 @@ must be used to loop this every minute.`,
 			}).Debugln("Creating client connection to host")
 			err = client.Connect()
 			if err != nil {
-				log.WithError(err).Errorln("Failed to open SNMP connection")
+				logrus.WithError(err).Errorln("Failed to open SNMP connection")
 				continue
 			}
 			defer client.Conn.Close()
@@ -120,7 +120,7 @@ must be used to loop this every minute.`,
 			for _, oid := range stroids {
 				pdus, err := client.BulkWalkAll(oid)
 				if err != nil {
-					log.WithError(err).Errorln("Failed to execute bulk walk request")
+					logrus.WithError(err).Errorln("Failed to execute bulk walk request")
 					continue
 				}
 				logrus.Debugln("PDU's retrieved, checking for PDU error(s)")
@@ -131,7 +131,7 @@ must be used to loop this every minute.`,
 					intIndex := strings.Join(splitOID[len(splitOID)-1:len(splitOID)], ".")
 					switch pdu.Type {
 					case gosnmp.OctetString:
-						log.WithFields(logrus.Fields{
+						logrus.WithFields(logrus.Fields{
 							"full_oid":        pdu.Name,
 							"host_queried":    cfg.Host,
 							"oid":             oid,
@@ -142,7 +142,7 @@ must be used to loop this every minute.`,
 							"value":           string(pdu.Value.([]byte)),
 						}).Infoln("OID successfully retrieved")
 					default:
-						log.WithFields(logrus.Fields{
+						logrus.WithFields(logrus.Fields{
 							"full_oid":        pdu.Name,
 							"host_queried":    cfg.Host,
 							"oid":             oid,

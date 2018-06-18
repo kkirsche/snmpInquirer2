@@ -27,7 +27,6 @@ import (
 var (
 	cfgFile        string
 	verboseEnabled bool
-	log            = logrus.New()
 )
 
 // RootCmd represents the base command when called without any subcommands
@@ -58,7 +57,7 @@ func init() {
 
 	hook, err := logrus_syslog.NewSyslogHook("", "", syslog.LOG_INFO, "Inquirer2")
 	if err != nil {
-		log.WithError(err).Errorln("Unable to create syslog hook")
+		logrus.WithError(err).Errorln("Unable to create syslog hook")
 		return
 	}
 
@@ -66,5 +65,5 @@ func init() {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
 
-	log.Hooks.Add(hook)
+	logrus.AddHook(hook)
 }
