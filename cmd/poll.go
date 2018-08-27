@@ -124,6 +124,12 @@ must be used to loop this every minute.`,
 					continue
 				}
 				logrus.Debugln("PDU's retrieved, checking for PDU error(s)")
+				if len(pdus) < 1 {
+					logrus.WithFields(logrus.Fields{
+						"oid":      oid,
+						"oid_name": cfg.OIDs[oid],
+					}).Warnln("No SNMP PDUs retrieved for OID. This may be an indication of a problem")
+				}
 				for _, pdu := range pdus {
 					logrus.Debugln("Bulk walk completed successfully")
 					logrus.Debugln("Outputting result values")
